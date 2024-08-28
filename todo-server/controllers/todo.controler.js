@@ -5,8 +5,6 @@ import Task from "../models/todo.model.js";
 export const createTask = async (req, res) => {
   try {
     const { title, date, description, isImportant, isCompleted } = req.body;
-    console.log(req.body);
-    
 
     // Explicitly convert to boolean
     const newTask = new Task({
@@ -18,8 +16,7 @@ export const createTask = async (req, res) => {
     });
 
     const savedTask = await newTask.save();
-    console.log(savedTask);
-    
+
     res.status(201).json(savedTask);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -30,9 +27,7 @@ export const createTask = async (req, res) => {
 // Update a Task
 export const updateTask = async (req, res) => {
   try {
-    const { title,  description, isImportant, isCompleted } = req.body;
-    console.log(req.body);
-    
+    const { title, description, isImportant, isCompleted } = req.body;
 
     const updatedTask = await Task.findByIdAndUpdate(
       req.params.id,
@@ -44,7 +39,6 @@ export const updateTask = async (req, res) => {
       },
       { new: true }
     );
-console.log(updateTask);
 
     if (!updatedTask) {
       return res.status(404).json({ message: "Task not found" });
@@ -55,8 +49,6 @@ console.log(updateTask);
     res.status(500).json({ error: error.message });
   }
 };
-
-
 
 // Get All Tasks
 export const getTasks = async (req, res) => {
@@ -80,8 +72,6 @@ export const getTaskById = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-
-
 
 // Delete a Task
 export const deleteTask = async (req, res) => {

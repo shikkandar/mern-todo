@@ -14,7 +14,7 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { createTask, updateTask } from "./api/GlobalApi";
 import { UserContext } from "./context/ContextProvider";
 
-const TaskForm = ({ handleClose, fetchTasks}) => {
+const TaskForm = ({ handleClose, fetchTasks }) => {
   const {
     title,
     setTitle,
@@ -32,10 +32,16 @@ const TaskForm = ({ handleClose, fetchTasks}) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (title && description && isImportant !== undefined) {
       try {
-        await createTask({ title, date, description, isCompleted, isImportant });
+        await createTask({
+          title,
+          date,
+          description,
+          isCompleted,
+          isImportant,
+        });
         fetchTasks(); // Fetch tasks after creation
         handleClose(); // Close form if creation is successful
       } catch (error) {
@@ -71,8 +77,7 @@ const TaskForm = ({ handleClose, fetchTasks}) => {
           "& > :not(style)": { m: 1, width: "40ch" },
         }}
         noValidate
-        autoComplete="off"
-      >
+        autoComplete="off">
         <TextField
           id="title"
           label="Title"
@@ -81,18 +86,18 @@ const TaskForm = ({ handleClose, fetchTasks}) => {
           onChange={(e) => setTitle(e.target.value)}
           required
         />
-        {!update && (
-          <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <DemoContainer components={["DatePicker"]}>
-              <DatePicker
-                label="Date"
-                value={date}
-                onChange={(newDate) => setDate(newDate)}
-                required
-              />
-            </DemoContainer>
-          </LocalizationProvider>
-        )}
+
+        <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <DemoContainer components={["DatePicker"]}>
+            <DatePicker
+              label="Date"
+              value={date}
+              onChange={(newDate) => setDate(newDate)}
+              required
+            />
+          </DemoContainer>
+        </LocalizationProvider>
+
         <TextField
           id="description"
           label="Description"
@@ -105,8 +110,7 @@ const TaskForm = ({ handleClose, fetchTasks}) => {
           aria-labelledby="priority-label"
           value={isImportant}
           onChange={(e) => setIsImportant(e.target.value === "true")}
-          required
-        >
+          required>
           <FormControlLabel
             value="true"
             control={<Radio />}
@@ -122,8 +126,7 @@ const TaskForm = ({ handleClose, fetchTasks}) => {
           aria-labelledby="completed-label"
           value={isCompleted}
           onChange={(e) => setIsCompleted(e.target.value === "true")}
-          required
-        >
+          required>
           <FormControlLabel
             value="true"
             control={<Radio />}
@@ -140,16 +143,14 @@ const TaskForm = ({ handleClose, fetchTasks}) => {
             type="button"
             variant="contained"
             color="warning"
-            onClick={handleUpdate}
-          >
+            onClick={handleUpdate}>
             Update Task
           </Button>
         ) : (
           <Button
             type="submit"
             variant="contained"
-            color="primary"
-          >
+            color="primary">
             Add Task
           </Button>
         )}

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import PropTypes from "prop-types";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
@@ -23,6 +23,10 @@ import TaskForm from "./TaskForm";
 import ClearIcon from "@mui/icons-material/Clear";
 import BasicCard from "./Card";
 import { getTasks, deleteTask } from "./api/GlobalApi";
+import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
+import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp";
+import { format } from "date-fns";
+import { UserContext } from "./context/ContextProvider";
 
 const drawerWidth = 240;
 
@@ -43,29 +47,33 @@ function Home(props) {
   const [heading, setHeading] = useState("All Task");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [tasks, setTasks] = useState([]);
-  const [filter, setFilter] = useState(""); // Added state for filter
+  const [filter, setFilter] = useState("");
+  const [expandedItems, setExpandedItems] = useState({}); // Object to manage toggle state
+  const [expandedItemsText, setExpandedItemsText] = useState({}); // Object to manage toggle state
+  const [arrowIcon, setArrowIcon] = useState(false); // State to manage arrow icon toggle
 
-  const handleClickOpen = () => {
-    setOpen(true);
-  };
+  const {
+    setTitle,
+    id,
+    setID,
+    setDescription,
+    setIsCompleted,
+    setIsImportant,
+    setUpdate,
+  } = useContext(UserContext);
 
-  const handleClose = () => {
-    setOpen(false);
-  };
+  const handleClickOpen = () => setOpen(true);
+  const handleClose = () => setOpen(false);
 
   const handleDrawerClose = () => {
     setIsClosing(true);
     setMobileOpen(false);
   };
 
-  const handleDrawerTransitionEnd = () => {
-    setIsClosing(false);
-  };
+  const handleDrawerTransitionEnd = () => setIsClosing(false);
 
   const handleDrawerToggle = () => {
-    if (!isClosing) {
-      setMobileOpen(!mobileOpen);
-    }
+    if (!isClosing) setMobileOpen(!mobileOpen);
   };
 
   const handleListItemClick = (index, heading) => {
@@ -89,18 +97,21 @@ function Home(props) {
         break;
     }
   };
+  const formatDate = (dateString) => {
+    return format(new Date(dateString), "dd/MM/yyyy");
+  };
 
   const fetchTasks = async () => {
     try {
       const response = await getTasks();
       if (filter === "important") {
-        setTasks(response.filter(task => task.isImportant));
+        setTasks(response.filter((task) => task.isImportant));
       } else if (filter === "completed") {
-        setTasks(response.filter(task => task.isCompleted));
+        setTasks(response.filter((task) => task.isCompleted));
       } else if (filter === "uncompleted") {
-        setTasks(response.filter(task => !task.isCompleted));
+        setTasks(response.filter((task) => !task.isCompleted));
       } else {
-        setTasks(response); 
+        setTasks(response);
       }
     } catch (error) {
       console.error("Error fetching tasks:", error);
@@ -109,7 +120,7 @@ function Home(props) {
 
   useEffect(() => {
     fetchTasks();
-  }, [filter]); // Fetch tasks whenever the filter changes
+  }, [filter]);
 
   const handleDelete = async (id) => {
     try {
@@ -124,13 +135,43 @@ function Home(props) {
     console.log("Update task:", task);
   };
 
+  const handleTaskList = () => setArrowIcon(!arrowIcon);
+
+  const handleItemClick = (index) => {
+    setExpandedItems((prevState) => ({
+      ...prevState,
+      [index]: !prevState[index],
+    }));
+    setExpandedItemsText((prevState) => ({
+      ...prevState,
+      [index]: !prevState[index],
+    }));
+  };
+
+  const handlelistEdit=(task)=>{
+    console.log(task);
+    
+    handleClickOpen()
+    setUpdate(true);
+    setTitle(task?.title);
+    setDescription(task?.description);
+    setIsCompleted(task?.isCompleted);
+    setIsImportant(task?.priority);
+    setID(task._id);
+  }
+
   const drawer = (
     <div>
       <Toolbar className="flex flex-col gap-2 my-2">
-        <Typography className="text-center" variant="h5">
+        <Typography
+          className="text-center"
+          variant="h5">
           To-do list
         </Typography>
-        <Button className="w-full" variant="contained" onClick={handleClickOpen}>
+        <Button
+          className="w-full"
+          variant="contained"
+          onClick={handleClickOpen}>
           Add Task
         </Button>
       </Toolbar>
@@ -146,13 +187,56 @@ function Home(props) {
             key={text}
             disablePadding
             onClick={() => handleListItemClick(index, text)}
-            className={selectedIndex === index ? "bg-[#9667e8] text-white" : ""}
-          >
+            className={
+              selectedIndex === index ? "bg-[#9667e8] text-white" : ""
+            }>
             <ListItemButton>
               <ListItemText primary={text} />
             </ListItemButton>
           </ListItem>
         ))}
+      </List>
+      <List>
+        <ListItem
+          className="bg-[#9667e8] text-white cursor-pointer"
+          onClick={handleTaskList}>
+          <ListItemText primary="Task List" />
+          {arrowIcon ? <ArrowDropDownIcon /> : <ArrowDropUpIcon />}
+        </ListItem>
+        {!arrowIcon && (
+          <>
+            {tasks.map((task, i) => (
+              <ListItem
+                key={task._id}
+                onClick={() => handleItemClick(i)}
+                className={`${
+                  task.isCompleted ? "bg-[#FF964A]" : "bg-slate-200"
+                } text-black cursor-pointer mt-2 flex flex-col`}>
+                <div className="flex w-full justify-between">
+                  <ListItemText primary={task.title} />
+                  {expandedItems[i] ? (
+                    <ArrowDropUpIcon />
+                  ) : (
+                    <ArrowDropDownIcon />
+                  )}
+                </div>
+                {expandedItemsText[i] && (
+                  <>
+                    <div className="bg-white rounded-md text-black p-2">
+                      <p className="border-b-2"> {formatDate(task?.date)}</p>
+                      <p> {task?.description}</p>
+                    </div>
+                    <Button
+                      className="mt-5"
+                      variant="contained"
+                      onClick={()=>handlelistEdit(task)}
+                    >Edit</Button>
+                  </>
+                )}
+              </ListItem>
+            ))}
+          </>
+        )}
       </List>
     </div>
   );
@@ -168,19 +252,20 @@ function Home(props) {
         sx={{
           width: { sm: `calc(100% - ${drawerWidth}px)` },
           ml: { sm: `${drawerWidth}px` },
-        }}
-      >
+        }}>
         <Toolbar>
           <IconButton
             color="inherit"
             aria-label="open drawer"
             edge="start"
             onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { sm: "none" } }}
-          >
+            sx={{ mr: 2, display: { sm: "none" } }}>
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" noWrap component="div">
+          <Typography
+            variant="h6"
+            noWrap
+            component="div">
             {heading}
           </Typography>
         </Toolbar>
@@ -188,8 +273,7 @@ function Home(props) {
       <Box
         component="nav"
         sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
-        aria-label="mailbox folders"
-      >
+        aria-label="mailbox folders">
         <Drawer
           container={container}
           variant="temporary"
@@ -197,7 +281,7 @@ function Home(props) {
           onTransitionEnd={handleDrawerTransitionEnd}
           onClose={handleDrawerClose}
           ModalProps={{
-            keepMounted: true, // Better open performance on mobile.
+            keepMounted: true,
           }}
           sx={{
             display: { xs: "block", sm: "none" },
@@ -205,8 +289,7 @@ function Home(props) {
               boxSizing: "border-box",
               width: drawerWidth,
             },
-          }}
-        >
+          }}>
           {drawer}
         </Drawer>
         <Drawer
@@ -218,8 +301,7 @@ function Home(props) {
               width: drawerWidth,
             },
           }}
-          open
-        >
+          open>
           {drawer}
         </Drawer>
       </Box>
@@ -229,8 +311,7 @@ function Home(props) {
           flexGrow: 1,
           p: 3,
           width: { sm: `calc(100% - ${drawerWidth}px)` },
-        }}
-      >
+        }}>
         <Toolbar />
         <div className="grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-4">
           {tasks.map((task) => (
@@ -248,8 +329,7 @@ function Home(props) {
           TransitionComponent={Transition}
           keepMounted
           onClose={handleClose}
-          aria-describedby="alert-dialog-slide-description"
-        >
+          aria-describedby="alert-dialog-slide-description">
           <DialogTitle className="flex justify-between">
             <Typography variant="h6">Add Task</Typography>
             <IconButton onClick={handleClose}>
@@ -258,7 +338,10 @@ function Home(props) {
           </DialogTitle>
           <DialogContent>
             <DialogContentText id="alert-dialog-slide-description">
-              <TaskForm handleClose={handleClose} fetchTasks={fetchTasks} />
+              <TaskForm
+                handleClose={handleClose}
+                fetchTasks={fetchTasks}
+              />
             </DialogContentText>
           </DialogContent>
         </Dialog>
