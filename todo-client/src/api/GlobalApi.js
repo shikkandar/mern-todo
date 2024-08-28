@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8080/api/tasks'; // Replace with your actual backend URL
+const API_URL = 'https://mern-todo-urbz.onrender.com/api/tasks'; // Replace with your actual backend URL
 
 export const getTasks = async () => {
   try {
